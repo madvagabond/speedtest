@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"encoding/json"
 	"time"
-	"fmt"
 	"strings"
 
 
+	"math/rand"
 	"net/url"
 
+	"fmt"
 	"io"
 	"io/ioutil"
 )
@@ -68,6 +69,11 @@ func SelectClosest(servers Servers) Server {
 	return closest 
 }
 
+func SelectRand(servers Servers) Server {
+	i := rand.Intn(len(servers))
+	return servers[i] 
+
+}
 
 
 
@@ -83,8 +89,8 @@ var ulSizes = [...]int{100, 300, 500, 800, 1000, 1500, 2500, 3000, 3500, 4000} /
 func Download(client *http.Client, server *Server, size int) error {
 
 	prefix := strings.Split(server.Url, "upload.php")[0]
-	dlSize := fmt.Sprint("%dxd%", dlSizes[size], dlSizes[size])
-	dlUri :=  prefix + "/random" + dlSize 
+	dlSize := fmt.Sprint(dlSizes[size])
+	dlUri :=  prefix + "/random" + dlSize + "x" + dlSize + ".jpg"
 	resp, e := client.Get(dlUri) 
 
 	defer resp.Body.Close()
@@ -100,8 +106,8 @@ func Download(client *http.Client, server *Server, size int) error {
 
 
 func calcSpeed(size int, dur time.Duration) float64 {
-	reqMB := size * size * 2 / 1000 / 1000
-	res := float64(reqMB) * 8 / float64(dur.Seconds())
+	reqMB := float64(size * size * 2) / 1000 / 1000
+	res := float64(reqMB) / float64(dur.Seconds())
 	return res
 }
 
