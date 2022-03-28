@@ -130,9 +130,20 @@ func Upload(client *http.Client, server *Server, size int) error {
 
 
 
+func UploadSpeed(client *http.Client, server *Server, size int) (float64, error) {
+	start := time.Now()
+	err := Upload(client, server, size) 
+	end := time.Now()
+
+	dur := end.Sub(start) 
+	speed := calcSpeed(ulSizes[size], dur) 
+	return speed, err 
+}
 
 
-func TestDownload(client *http.Client, server *Server, size int) (float64, error) {
+
+
+func DownloadSpeed(client *http.Client, server *Server, size int) (float64, error) {
 	start := time.Now()
 	err := Download(client, server, size) 
 	end := time.Now()
@@ -145,7 +156,7 @@ func TestDownload(client *http.Client, server *Server, size int) (float64, error
 }
 
 
-func TestPing(client *http.Client, server *Server) (time.Duration, error) {
+func PingLatency(client *http.Client, server *Server) (time.Duration, error) {
 	url := server.Url 
 	pingURL := strings.Split(url, "/upload.php")[0] + "/latency.txt"
 
