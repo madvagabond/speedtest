@@ -5,7 +5,13 @@ import (
 	"net/http"
 	"encoding/json"
 	"time"
+	"fmt"
 	"strings"
+
+
+	"net/url"
+
+	"io"
 	"io/ioutil"
 )
 
@@ -76,17 +82,19 @@ var ulSizes = [...]int{100, 300, 500, 800, 1000, 1500, 2500, 3000, 3500, 4000} /
 // size is an index for an array of sizes from 350x350 to 4Kx4K with range 0 to 9  
 func Download(client *http.Client, server *Server, size int) error {
 
-	prefix := strings.split("upload.php")[0]
-	dlSize := fmt.Sprint("%dxd%", dlSizes[size], dlSizes[size]
-	dlUri =  prefix + "/random" + dlSize 
+	prefix := strings.Split(server.Url, "upload.php")[0]
+	dlSize := fmt.Sprint("%dxd%", dlSizes[size], dlSizes[size])
+	dlUri :=  prefix + "/random" + dlSize 
 	resp, e := client.Get(dlUri) 
 
+	defer resp.Body.Close()
 	if e != nil {
 		return e 
 	}
-	return io.Copy(ioutil.Discard, resp.Body)
 
 
+	_, err := io.Copy(ioutil.Discard, resp.Body)
+	return err 
 	
 }
 
@@ -100,13 +108,35 @@ func calcSpeed(size int, dur time.Duration) float64 {
 
 
 
+func Upload(client *http.Client, server *Server, size int) error {
+
+	size1 := ulSizes[size] 
+	v := url.Values{}
+	v.Add("content", strings.Repeat("0123456789", size1*100-51))
+
+
+	body := strings.NewReader(v.Encode())
+	
+	resp, err := client.Post(server.Url, "application/x-www-form-urlencoded", body) 
+	defer resp.Body.Close() 
+
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(ioutil.Discard, resp.Body)
+	return err
+}
+
+
+
+
 
 
 func TestDownload(client *http.Client, server *Server, size int) (float64, error) {
 	start := time.Now()
-	err := Download(client, server, int) 
+	err := Download(client, server, size) 
 	end := time.Now()
-	dur = end.Sub(start)
+	dur := end.Sub(start)
 
 	dlSize := dlSizes[size]
 	speed := calcSpeed(dlSize, dur)
